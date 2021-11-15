@@ -1,30 +1,49 @@
 import tkinter as tk
 import time
 from PIL import Image, ImageTk
+from PIL import GifImagePlugin
+import pygame.time
 
 window = tk.Tk()
-window.config(highlightbackground='black')
+window.config(bg='') #sets background to transparent
 window.overrideredirect(True) #hides top bar
-window.wm_attributes('-transparentcolor','black') #makes top bar unusable
+window.wm_attributes('-transparentcolor','blue') #makes anything that is BLUE transparent
 
-label = tk.Label(window,bd=0,bg='black')
-label.pack()
+clock = pygame.time.Clock() #use to set program fps
+gameFrames = 0; #counting frames to regulate animation speed.
+gif = Image.open("run.gif")
+animationFrame = -1
 
-greeting = tk.Label(text="Hello, Tkinter")
-greeting.pack()
+#adds a passed iamge from nextFrame() to a label and places it on the top level
+def showImage(frame):
+    for widget in window.winfo_children():
+       widget.destroy()
+    frame2 = frame
+    img = tk.Label(image = frame2)
+    img.config(bg='blue')
+    img.image = frame2
+    img.place(x=0, y=0)
+    img.pack()
+    window.update()
 
-load = Image.open("testcat.jpg")
-render = ImageTk.PhotoImage(load)
+#check which frame the animation should current be on, extracts and sends the next from to showImage() and returns updated frame number (previous + 1)
+def nextFrame():
+    global animationFrame
+    if animationFrame >= gif.n_frames - 1:
+        animationFrame = -1
+    gif.seek(animationFrame + 1)
+    rgba = gif.convert('RGBA')
+    rgba = rgba.resize((200, 200), Image.BOX)
+    frameImg = ImageTk.PhotoImage(rgba)
+    showImage(frameImg)
+    return animationFrame + 1
 
-img = tk.Label(image=render)
-img.image = render
-img.place(x=0, y=0)
-img.pack()
 
 dragging = False;
 offsetx = 0;
 offsety = 0;
 
+#when first clicked, saves windows offset from cursor, then sets the window to that same offset as cursor moves such that user can "grab" any spot on window
 def move(event):
     global dragging
     global offsetx
@@ -34,6 +53,7 @@ def move(event):
         offsetx = x - window.winfo_x()
         offsety = y - window.winfo_y()
         dragging = True
+
     
     if dragging:
         x, y = window.winfo_pointerxy()
@@ -41,6 +61,7 @@ def move(event):
         y -= offsety
         window.geometry(f"+{x}+{y}")
 
+#resets cursor offset positions when button is released
 def stopMove(event):
     global dragging
     global offsetx
@@ -51,7 +72,15 @@ def stopMove(event):
 
 window.bind('<B1-Motion>',move)
 window.bind('<ButtonRelease-1>', stopMove)
-window.mainloop()
+
+#main loop; updates window, iterates frame count, and iterates animation cycle every 12 frames (1/10 fps)
+#NOTE: "gameFrames" must be high, otherwise the cursor will move off the window faster than the window can update and no longer be registered
+while True:
+    window.update()
+    gameFrames += 1
+    if gameFrames % 12 == 0:
+        animationFrame = nextFrame()
+    clock.tick(120) #uses pygame to maintain consistent fps.
 
 
 
