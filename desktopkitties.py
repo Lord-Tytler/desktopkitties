@@ -1,5 +1,4 @@
 import tkinter as tk
-import time
 from PIL import Image, ImageTk
 import pygame.time
 from enum import IntEnum
@@ -8,11 +7,15 @@ class States(IntEnum):
     IDLE=0
     LEFT=1
     RIGHT=2
+    FALLING=3
+    LANDING=4
 
 gifs = [
     Image.open("idle.gif"),
     Image.open("run_left.gif"),
     Image.open("run_right.gif"),
+    Image.open("falling.gif"),
+    Image.open("landing.gif"), #TODO landing animation looks like it is floating. fix.
 ]
 
 #window setup
@@ -47,7 +50,10 @@ def showImage(frame):
 def nextFrame():
     global animationFrame
     if animationFrame >= activeGif.n_frames - 1:
-        if stateQueued and nextState != activeState:
+        if activeState == States.FALLING or (activeState == States.LANDING and not stateQueued):
+            animationFrame = activeGif.n_frames - 2
+            print("looping animation")
+        elif stateQueued and nextState != activeState:
             changeState(nextState)
         else:
             animationFrame = -1
@@ -80,9 +86,11 @@ def queueStateChange(stateIndex):
 dragging = False; 
 offsetx = 0;
 offsety = 0;
+velocity_x = 0;
+velocity_y = 0;
 
 #if dragging is true (see startMove() and stopMove()), sets the top level's position to a prerecorded offset of the cursors current position
-def move():
+def dragWindow():
     if dragging:
         x, y = window.winfo_pointerxy()
         x -= offsetx
@@ -108,18 +116,65 @@ def stopMove(event):
     dragging = False;
     offsetx = 0;
     offsety = 0;
+def tempStateChange(event):
+    queueStateChange(States.RIGHT)
+def tempStateChange2(event):
+    queueStateChange(States.FALLING)    
 
 window.bind('<Button-1>',startMove)
+window.bind('<Button-2>',tempStateChange2)
+window.bind('<Button-3>',tempStateChange)
 window.bind('<ButtonRelease-1>', stopMove)
+
+def checkCollision():
+    screen_height = window.winfo_screenheight()
+    x = window.winfo_x()
+    y = window.winfo_y()
+    h = window.winfo_height()
+    if y + h < screen_height - 1 and activeState != States.FALLING: #checks bottom of screen collision
+        changeState(States.FALLING)
+    if y + h >= screen_height - 1 and activeState == States.FALLING: #checks if cat hits bottom of screen while falling
+        y = screen_height - 1 - h #sets cats y position to bottom of screen
+        changeState(States.LANDING)
+        window.geometry(f"+{x}+{y}")
+
+
+def moveCat(dt):
+    global velocity_x
+    global velocity_y
+    checkCollision()
+    match activeState:
+        case States.IDLE:
+            velocity_x = 0
+        case States.LEFT:
+            velocity_x = -10
+        case States.RIGHT:
+            velocity_x = 10
+        case States.FALLING:
+            velocity_y = 0.1 #TODO maybe gravity acceleration instead
+        case States.LANDING:
+            velocity_y = 0
+            velocity_x = 0
+    if not dragging:
+        x = window.winfo_x()
+        y = window.winfo_y()
+        x += int(velocity_x * dt)
+        y += int(velocity_y * dt)
+        window.geometry(f"+{x}+{y}")
+
+
 
 #main loop; updates window, iterates frame count, and iterates animation cycle every 1/10 of a second
 while True:
-    fps = 120
+    fps = 120 #TODO set fps to display refresh rate
+    dt = 1000 / fps
     window.update()
     gameFrames += 1
-    move()
-    if gameFrames % (fps / 10) == 0:
+    dragWindow()
+    moveCat(dt)
+    if gameFrames % (fps / 10) == 0: #TODO maybe incorporate different animation fps per gif. would be easy to attach an fps to each state, just will have to do some rounding
         animationFrame = nextFrame()
+    window.update()
     clock.tick(fps) #uses pygame to maintain consistent fps.
 
 
