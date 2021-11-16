@@ -1,2 +1,2 @@
 # desktopkitties
-a desktop pet present for someone staring our two kittens
+a desktop pet present for someone starring our two kittens

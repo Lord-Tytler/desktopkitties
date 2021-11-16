@@ -44,7 +44,17 @@ offsetx = 0;
 offsety = 0;
 
 #when first clicked, saves windows offset from cursor, then sets the window to that same offset as cursor moves such that user can "grab" any spot on window
-def move(event):
+def move():
+    #global dragging
+    #global offsetx
+    #global offsety
+    if dragging:
+        x, y = window.winfo_pointerxy()
+        x -= offsetx
+        y -= offsety
+        window.geometry(f"+{x}+{y}")
+
+def startMove(event):
     global dragging
     global offsetx
     global offsety
@@ -53,13 +63,6 @@ def move(event):
         offsetx = x - window.winfo_x()
         offsety = y - window.winfo_y()
         dragging = True
-
-    
-    if dragging:
-        x, y = window.winfo_pointerxy()
-        x -= offsetx
-        y -= offsety
-        window.geometry(f"+{x}+{y}")
 
 #resets cursor offset positions when button is released
 def stopMove(event):
@@ -70,17 +73,18 @@ def stopMove(event):
     offsetx = 0;
     offsety = 0;
 
-window.bind('<B1-Motion>',move)
+window.bind('<Button-1>',startMove)
 window.bind('<ButtonRelease-1>', stopMove)
 
-#main loop; updates window, iterates frame count, and iterates animation cycle every 12 frames (1/10 fps)
-#NOTE: "gameFrames" must be high, otherwise the cursor will move off the window faster than the window can update and no longer be registered
+#main loop; updates window, iterates frame count, and iterates animation cycle every 1/10 of a second
 while True:
+    fps = 120
     window.update()
     gameFrames += 1
-    if gameFrames % 12 == 0:
+    move()
+    if gameFrames % (fps / 10) == 0:
         animationFrame = nextFrame()
-    clock.tick(120) #uses pygame to maintain consistent fps.
+    clock.tick(fps) #uses pygame to maintain consistent fps.
 
 
 
