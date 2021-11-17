@@ -4,6 +4,9 @@ import pygame.time
 from enum import IntEnum
 
 class Window:
+    def __init__(self):
+        self.window.bind('<B1-Motion>',self.dragClicked)
+        self.window.bind('<ButtonRelease-1>', self.dragReleased)
     gifs = [
         Image.open("idle.gif"),
         Image.open("run_left.gif"),
@@ -23,6 +26,9 @@ class Window:
     window.config(bg='') #sets background to transparent
     window.overrideredirect(True) #hides top bar
     window.wm_attributes('-transparentcolor','blue') #makes anything that is BLUE transparent
+    
+
+    
 
     #adds a passed iamge from nextFrame() to a label and places it on the top level
     def showImage(self, frame):
@@ -46,13 +52,11 @@ class Window:
         self.animationFrame += 1
     
     
-    def dragClicked(self):
+    def dragClicked(self, event=None):
         self.dragButtonClicked = True
-    def dragReleased(self):
+    def dragReleased(self, event=None):
         self.dragButtonClicked = False
-
-    window.bind('<Button-1>',dragClicked)
-    window.bind('<ButtonRelease-1>', dragReleased)
+    
 
     def setActiveGif(self, stateIndex):
         self.activeGif = self.gifs[stateIndex]
@@ -60,10 +64,8 @@ class Window:
     def setWindowPos(self, x, y):
         self.window.geometry(f"+{x}+{y}")
 
-    def getAnimationFrame(self): return self.animationFrame #NOTE maybe useless
-    def setAnimationFrame(self, frame): self.animationFrame = frame
-
     def update(self,x, y):
+        #print(self.getDragButtonClicked())
         self.window.update()
         self.setWindowPos(int(x), int(y))
         

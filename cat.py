@@ -57,7 +57,8 @@ class Cat:
     offsety = 0;
     dragging = False; 
     def moveCat(self, dt):
-        if not self.win.dragButtonClicked:
+        print(self.win.dragButtonClicked)
+        if not self.win.dragButtonClicked == 1:
             self.dragging = False
             self.checkCollision()
             match self.activeState:
@@ -67,17 +68,18 @@ class Cat:
                     self.velocity_x = -10
                 case States.RIGHT:
                     self.velocity_x = 10
-                case States.FALLING:
+                case States.FALLING: #TODO state for being grabbed, can just rotate falling icon
                     self.velocity_y = 0.5 #TODO maybe gravity acceleration instead
                 case States.LANDING:
                     self.velocity_y = 0
                     self.velocity_x = 0
             self.x += self.velocity_x * dt
             self.y += self.velocity_y * dt
-        elif self.win.dragButtonClicked and not self.dragging:
+        elif self.win.dragButtonClicked == 1 and not self.dragging:
             px, py = self.win.window.winfo_pointerxy()
             self.offsetx = px - self.x
             self.offsety = py - self.y
+            self.dragging = True
         else:
             px, py = self.win.window.winfo_pointerxy()
             self.x = px - self.offsetx
